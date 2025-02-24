@@ -4,6 +4,7 @@ import (
 	"GoLas/readLas"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"runtime"
 	"strings"
@@ -107,27 +108,22 @@ func main() {
 	filePath := os.Args
 	var fileData readLas.LAS = readLas.Read_file(filePath[1])
 	fmt.Println(fileData.Info)
-	// height := 1000
-	// width := int((fileData.Info.Extent.MaxX - fileData.Info.Extent.MinX) / (fileData.Info.Extent.MaxY - fileData.Info.Extent.MinY) * float64(height))
 
-	// Zscale := int((fileData.Info.Extent.MaxY - fileData.Info.Extent.MinY) / (fileData.Info.Extent.MaxX - fileData.Info.Extent.MinX))
 	Hratio := (fileData.Info.Extent.MaxY - fileData.Info.Extent.MinY) / (fileData.Info.Extent.MaxX - fileData.Info.Extent.MinX)
-	Vratio := (fileData.Info.Extent.MaxZ - fileData.Info.Extent.MinZ) / (fileData.Info.Extent.MaxX - fileData.Info.Extent.MinX)
+	Vratio := (fileData.Info.Extent.MaxZ - fileData.Info.Extent.MinZ) / math.Sqrt(math.Pow(fileData.Info.Extent.MaxX-fileData.Info.Extent.MinX, 2)+math.Pow(fileData.Info.Extent.MaxY-fileData.Info.Extent.MinY, 2))
+
 	fmt.Println(width, height)
+
 	Xc := (fileData.Info.Extent.MaxX + fileData.Info.Extent.MinX) / 2
 	Yc := (fileData.Info.Extent.MaxY + fileData.Info.Extent.MinY) / 2
 	Zc := (fileData.Info.Extent.MaxZ + fileData.Info.Extent.MinZ) / 2
 	for i := 0; i < len(fileData.Points); i++ {
-		// if float32((float64(fileData.Points[i].Z)*0.01+float64(fileData.Info.Offset.Z))-Zc)/float32(fileData.Info.Extent.MaxZ-Zc) > 100 {
-		// fmt.Println(float32((float64(fileData.Points[i].Z)*0.01+float64(fileData.Info.Offset.Z))-Zc) / float32(fileData.Info.Extent.MaxZ-Zc))
 		vertex = append(vertex, float32((float64(fileData.Points[i].X)*fileData.Info.Scale.X+float64(fileData.Info.Offset.X))-Xc)/float32(fileData.Info.Extent.MaxX-Xc))
 		vertex = append(vertex, float32((float64(fileData.Points[i].Y)*fileData.Info.Scale.Y+float64(fileData.Info.Offset.Y))-Yc)/float32(fileData.Info.Extent.MaxY-Yc)*float32(Hratio))
 		vertex = append(vertex, float32((float64(fileData.Points[i].Z)*fileData.Info.Scale.Z+float64(fileData.Info.Offset.Z))-Zc)/float32(fileData.Info.Extent.MinZ-Zc)*float32(Vratio))
 		vertex = append(vertex, float32(fileData.Points[i].Red)/(float32(65535)))
 		vertex = append(vertex, float32(fileData.Points[i].Green)/(float32(65535)))
 		vertex = append(vertex, float32(fileData.Points[i].Blue)/(float32(65535)))
-		// }
-		// break
 	}
 
 	fileData.Points = []readLas.Point{}
