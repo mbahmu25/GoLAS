@@ -3,20 +3,17 @@ package readLas
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
-
-	// "fmt"
-	// "GoLas/byteReading"
-
 	"log"
 	"os"
 )
 
 type LAS struct {
-	point Point
+	Info   GeomInfo
+	Points []Point
 }
 
-func Read_file(filePath string) []Point {
+func Read_file(filePath string) LAS {
+	// Open and Read Binary File
 	file, errFile := os.Open(filePath)
 	stat, errStat := os.Stat(filePath)
 	defer file.Close()
@@ -33,24 +30,28 @@ func Read_file(filePath string) []Point {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// Store to array byte
 	var data []byte = bytesBuffer[:bin]
+
+	//parsing header
 	var offsetToPoint uint32 = binary.LittleEndian.Uint32(data[96:100])
 	var geoInfo GeomInfo = ReadGeomInfo(data[131:143])
-	var pointData = data[offsetToPoint:]
 	var arrPoint = make([]Point, int((int(fileLength)-int(offsetToPoint))/29))
-	fmt.Println(offsetToPoint, geoInfo)
+
+	//assign point to array
 	for i := 0; i < int((int(fileLength)-int(offsetToPoint))/29); i++ {
-		arrPoint[i] = ReadPoint(pointData[29*i : 29*(i+1)])
+		arrPoint[i] = ReadPoint(data[int(offsetToPoint)+29*i : (int(offsetToPoint) + 29*(i+1))])
 	}
-	// fmt.Print(ReadPoint(pointData[0 : 29*(0+1)]))
-	// arrPoint = append(arrPoint, ReadPoint(pointData[0:29*(0+1)]))
-	return arrPoint
+	var result LAS
+	result.Info = geoInfo
+	result.Points = arrPoint
+	return result
 }
 
 type GeomInfo struct {
-	scale  CoordXYZ
-	offset CoordXYZ
-	extent CoordExtent
+	Scale  CoordXYZ
+	Offset CoordXYZ
+	Extent CoordExtent
 }
 type CoordExtent struct {
 	MaxX float64
@@ -75,9 +76,9 @@ func ReadGeomInfo(bin []byte) GeomInfo {
 	binary.Read(bytes.NewReader(bin[24:48]), binary.LittleEndian, &_offset)
 	binary.Read(bytes.NewReader(bin[48:48+24*2]), binary.LittleEndian, &_extent)
 
-	info.scale = _scale
-	info.offset = _offset
-	info.extent = _extent
+	info.Scale = _scale
+	info.Offset = _offset
+	info.Extent = _extent
 	return info
 }
 
@@ -100,9 +101,9 @@ func ReadPoint(bin []byte) Point {
 	binary.Read(bytes.NewReader(bin[8:12]), binary.LittleEndian, &point.Z)
 	binary.Read(bytes.NewReader(bin[12:14]), binary.LittleEndian, &point.Intensity)
 	binary.Read(bytes.NewReader(bin[19:20]), binary.LittleEndian, &point.Classification)
-	binary.Read(bytes.NewReader(bin[23:25]), binary.LittleEndian, &point.Red)
-	binary.Read(bytes.NewReader(bin[25:27]), binary.LittleEndian, &point.Green)
-	binary.Read(bytes.NewReader(bin[27:29]), binary.LittleEndian, &point.Blue)
+	binary.Read(bytes.NewReader(bin[21:23]), binary.BigEndian, &point.Red)
+	binary.Read(bytes.NewReader(bin[23:25]), binary.BigEndian, &point.Green)
+	binary.Read(bytes.NewReader(bin[25:27]), binary.BigEndian, &point.Blue)
 
 	return point
 }
