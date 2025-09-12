@@ -300,7 +300,11 @@ func keyboardInput(window *glfw.Window) {
 
 		pitch += float64(Tsens) * 40
 	} else if glfw.Press == window.GetKey(glfw.KeyS) {
-		pitch -= float64(Tsens) * 40
+		if pitch > float64(Tsens)*40 {
+			pitch -= float64(Tsens) * 40
+		} else {
+			pitch = float64(Tsens) * 40
+		}
 	}
 	if glfw.Press == window.GetKey(glfw.KeyA) {
 
